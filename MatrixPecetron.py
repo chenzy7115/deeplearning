@@ -46,6 +46,13 @@ def NAND(x1, x2):
         return 1
 
 
+def XOR(x1, x2):
+    s1 = NAND(x1, x2)
+    s2 = OR(x1, x2)
+    y = AND(s1, s2)
+    return y
+
+
 # 所有的pecetron都是相同的，不同的只是权重和偏置值
 # 下面为输出结果展示
 print("AND Gate 的计算结果为,输入的都是(0,0)(1,0)(0,1)(1,1):")
@@ -65,3 +72,9 @@ print(NAND(0, 0))
 print(NAND(1, 0))
 print(NAND(0, 1))
 print(NAND(1, 1))
+
+print("XOR Gate 的计算结果为,输入的都是(0,0)(1,0)(0,1)(1,1):")
+print(XOR(0, 0))
+print(XOR(1, 0))
+print(XOR(0, 1))
+print(XOR(1, 1))
