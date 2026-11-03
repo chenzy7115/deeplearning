@@ -1,0 +1,884 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>conda 与 VSCode 环境管理手册</title>
+<style>
+:root{
+  --bg:#0d1117; --surface:#161b22; --surface2:#1c2128; --code-bg:#0b0f14;
+  --border:#30363d; --text:#e6edf3; --muted:#8b949e;
+  --blue:#58a6ff; --green:#3fb950; --amber:#d29922; --red:#f85149; --purple:#bc8cff;
+}
+*{box-sizing:border-box;}
+html{scroll-behavior:smooth;}
+body{margin:0; display:flex; background:var(--bg); color:var(--text);
+  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Microsoft YaHei",sans-serif;
+  font-size:15px; line-height:1.75; -webkit-font-smoothing:antialiased;}
+
+.sidebar{width:268px; flex-shrink:0; position:sticky; top:0; height:100vh; overflow-y:auto;
+  border-right:1px solid var(--border); padding:26px 0 40px; background:var(--surface);}
+.brand{padding:0 22px 18px; border-bottom:1px solid var(--border); margin-bottom:14px;}
+.brand .t{font-size:15px; font-weight:600; letter-spacing:.2px;}
+.brand .s{font-size:12px; color:var(--muted); margin-top:4px;}
+.nav{display:flex; flex-direction:column; padding:0 10px;}
+.nav a{display:block; padding:7px 12px; margin:1px 0; font-size:13.5px; color:var(--muted);
+  text-decoration:none; border-radius:6px; border-left:2px solid transparent;}
+.nav a:hover{color:var(--text); background:var(--surface2);}
+.nav a.active{color:var(--blue); background:rgba(88,166,255,.1); border-left-color:var(--blue);}
+.nav .grp{font-size:11px; color:#6e7681; letter-spacing:.8px; padding:14px 12px 6px; text-transform:uppercase;}
+
+main{flex:1; min-width:0; padding:48px 56px 140px; max-width:980px;}
+h1{font-size:30px; margin:0 0 10px; letter-spacing:-.3px;}
+.sub{color:var(--muted); font-size:14.5px; margin:0 0 26px;}
+h2{font-size:22px; margin:58px 0 16px; padding-bottom:10px; border-bottom:1px solid var(--border); scroll-margin-top:20px;}
+h3{font-size:16.5px; margin:30px 0 12px; font-weight:600;}
+h4{font-size:14px; margin:20px 0 8px; font-weight:600; color:var(--muted);}
+p{margin:12px 0;}
+ul,ol{margin:12px 0; padding-left:22px;}
+li{margin:6px 0;}
+a{color:var(--blue);}
+
+p code,li code,td code,h3 code,h4 code{
+  background:var(--surface2); border:1px solid var(--border); border-radius:4px;
+  padding:1.5px 6px; font-size:12.8px; color:#79c0ff;
+  font-family:"Cascadia Code",Consolas,"JetBrains Mono",monospace;}
+
+pre{position:relative; background:var(--code-bg); border:1px solid var(--border);
+  border-radius:10px; padding:15px 16px; overflow-x:auto; margin:14px 0;}
+pre code{font-family:"Cascadia Code",Consolas,"JetBrains Mono",monospace;
+  font-size:13px; line-height:1.7; color:#c9d1d9; white-space:pre;}
+pre .copy{position:absolute; top:8px; right:8px; font-size:11.5px; padding:3px 9px;
+  background:var(--surface2); color:var(--muted); border:1px solid var(--border);
+  border-radius:5px; cursor:pointer; font-family:inherit; opacity:0; transition:opacity .15s;}
+pre:hover .copy{opacity:1;}
+pre .copy:hover{color:var(--text); border-color:#484f58;}
+
+table{width:100%; border-collapse:collapse; margin:16px 0; font-size:13.8px;}
+th,td{border:1px solid var(--border); padding:9px 12px; text-align:left; vertical-align:top;}
+th{background:var(--surface2); font-weight:600; font-size:13px; color:#c9d1d9; white-space:nowrap;}
+td code{white-space:nowrap;}
+
+.note,.warn,.danger,.ok{border-left:3px solid var(--blue); background:rgba(88,166,255,.07);
+  padding:12px 16px; border-radius:0 8px 8px 0; margin:16px 0; font-size:14px;}
+.warn{border-left-color:var(--amber); background:rgba(210,153,34,.08);}
+.danger{border-left-color:var(--red); background:rgba(248,81,73,.08);}
+.ok{border-left-color:var(--green); background:rgba(63,185,80,.08);}
+.note b,.warn b,.danger b,.ok b{font-weight:600;}
+
+.cards{display:grid; grid-template-columns:repeat(auto-fit,minmax(180px,1fr)); gap:12px; margin:18px 0;}
+.card{background:var(--surface); border:1px solid var(--border); border-radius:10px; padding:14px 16px;}
+.card .k{font-size:12px; color:var(--muted); margin-bottom:5px;}
+.card .v{font-size:17px; font-weight:600; letter-spacing:-.2px;}
+.card .n{font-size:11.5px; color:#6e7681; margin-top:4px;}
+
+.badge{display:inline-block; font-size:11px; padding:1.5px 8px; border-radius:999px;
+  border:1px solid currentColor; vertical-align:1px; margin-left:6px;}
+.b-blue{color:var(--blue);} .b-green{color:var(--green);}
+.b-amber{color:var(--amber);} .b-red{color:var(--red);} .b-purple{color:var(--purple);}
+
+.figure{margin:22px 0; padding:18px; background:var(--surface); border:1px solid var(--border); border-radius:12px;}
+.figure svg{width:100%; height:auto; display:block;}
+.figure .cap{font-size:12.5px; color:var(--muted); text-align:center; margin-top:12px;}
+
+.q{border:1px solid var(--border); border-radius:10px; margin:16px 0; overflow:hidden;}
+.q>.head{background:var(--surface2); padding:11px 16px; font-size:14px; font-weight:600;}
+.q>.body{padding:4px 16px 14px; font-size:14px;}
+
+.top{position:fixed; right:26px; bottom:26px; width:38px; height:38px; border-radius:50%;
+  background:var(--surface2); border:1px solid var(--border); color:var(--muted);
+  display:flex; align-items:center; justify-content:center; cursor:pointer;
+  font-size:16px; opacity:0; pointer-events:none; transition:opacity .2s;}
+.top.show{opacity:1; pointer-events:auto;}
+.top:hover{color:var(--text);}
+
+hr{border:0; border-top:1px solid var(--border); margin:34px 0;}
+
+@media (max-width:900px){
+  body{flex-direction:column;}
+  .sidebar{position:static; width:auto; height:auto; border-right:none;
+    border-bottom:1px solid var(--border); padding:14px 0 10px;}
+  .brand{display:none;}
+  .nav{flex-direction:row; overflow-x:auto; gap:4px; padding:0 12px 4px;}
+  .nav .grp{display:none;}
+  .nav a{white-space:nowrap; border-left:none; border-bottom:2px solid transparent;}
+  .nav a.active{border-left:none; border-bottom-color:var(--blue);}
+  main{padding:28px 18px 100px;}
+  h1{font-size:24px;}
+  table{font-size:12.8px;}
+  th,td{padding:7px 9px;}
+  pre .copy{opacity:1;}
+}
+</style>
+</head>
+<body>
+
+<aside class="sidebar">
+  <div class="brand">
+    <div class="t">conda 与 VSCode 手册</div>
+    <div class="s">Python 环境管理 · 本机实测版</div>
+  </div>
+  <nav class="nav">
+    <div class="grp">概念</div>
+    <a href="#intro">这套环境现在是什么</a>
+    <a href="#why">为什么需要虚拟环境</a>
+    <a href="#venv-conda">venv 与 conda 的区别</a>
+    <a href="#scope">两者的适用范围</a>
+
+    <div class="grp">conda 用法</div>
+    <a href="#basics">基本命令速查</a>
+    <a href="#create">创建环境</a>
+    <a href="#lifecycle">环境该建几个</a>
+    <a href="#pyswitch">更换 Python 版本</a>
+    <a href="#install">安装各种库</a>
+    <a href="#mirror">国内镜像加速</a>
+
+    <div class="grp">编辑器</div>
+    <a href="#vscode">在 VSCode 中使用</a>
+    <a href="#settings">推荐的 settings.json</a>
+    <a href="#notebook">Jupyter 内核</a>
+
+    <div class="grp">排错</div>
+    <a href="#trouble">常见报错处理</a>
+    <a href="#appendix">本机环境档案</a>
+  </nav>
+</aside>
+
+<main>
+
+<h1>conda 与 VSCode 环境管理手册</h1>
+<p class="sub">从「conda 命令找不到」到「GPU 训练跑通」的完整记录 · 2026-11-02</p>
+
+<h2 id="intro">这套环境现在是什么</h2>
+
+<p>这台机器上有<strong>三套互相独立的 Python</strong>，搞清楚它们是理解后面一切的前提：</p>
+
+<div class="cards">
+  <div class="card">
+    <div class="k">Anaconda base</div>
+    <div class="v">3.14.6</div>
+    <div class="n">C:\Users\18960\anaconda3<br>536 个包 · 10.8 GB</div>
+  </div>
+  <div class="card">
+    <div class="k">conda 环境 dl</div>
+    <div class="v">3.12.16</div>
+    <div class="n">anaconda3\envs\dl<br>118 个包 · 4.93 GB</div>
+  </div>
+  <div class="card">
+    <div class="k">系统独立安装</div>
+    <div class="v">3.12.10</div>
+    <div class="n">Programs\Python\Python312<br>PATH 里排第一</div>
+  </div>
+</div>
+
+<div class="warn">
+  <b>关键认知：</b>不激活任何环境时，命令行里的 <code>python</code> 指向系统那个 3.12.10，<strong>不是</strong> Anaconda。只有 <code>conda activate base</code> 或 <code>conda activate dl</code> 之后，<code>python</code> 才会切到 Anaconda 的对应环境。这就是为什么必须"先激活再干活"。
+</div>
+
+<div class="ok">
+  <b>日常用法就一句话：</b>打开 VSCode → 右下角选 <code>dl</code> 环境 → 新开终端自动激活 → 直接写代码。<code>dl</code> 里已经装好 PyTorch 2.11 + CUDA 12.8，GPU 训练验证通过。
+</div>
+
+<h2 id="why">为什么需要虚拟环境</h2>
+
+<p>不隔离会出什么事？举个例子：项目 A 需要 <code>numpy 1.26</code>（老代码依赖旧 API），项目 B 需要 <code>numpy 2.5</code>（新特性）。如果全装在同一个 Python 里，只能留一个，另一个项目必然跑不起来。库越多，这种冲突越密集。</p>
+
+<p>虚拟环境的作用就是：<strong>给每个项目一套独立的包目录</strong>，互不干扰。删掉环境等于删掉目录，干净利落，不会污染系统。</p>
+
+<h2 id="venv-conda">venv 与 conda 的区别</h2>
+
+<p>两者目标一样，隔离的<strong>层级</strong>完全不同。这是最容易被忽略的一点：</p>
+
+<div class="figure">
+<svg viewBox="0 0 680 330" role="img" xmlns="http://www.w3.org/2000/svg">
+<title>venv 与 conda 的隔离范围对比</title>
+<desc>venv 只隔离第三方包，解释器与 C 库共享；conda 环境拥有独立解释器和二进制依赖。</desc>
+<rect x="30" y="40" width="290" height="240" rx="14" fill="#0d2847" stroke="#1f6feb" stroke-width="0.8"/>
+<text x="48" y="68" font-size="14" font-weight="600" fill="#cae8ff" font-family="sans-serif">venv</text>
+<rect x="48" y="84" width="254" height="40" rx="8" fill="#0a1c30" stroke="#1f6feb" stroke-width="0.6"/>
+<text x="62" y="104" font-size="13" fill="#cae8ff" dominant-baseline="central" font-family="sans-serif">pyvenv.cfg → 指向基础解释器</text>
+<rect x="48" y="132" width="254" height="40" rx="8" fill="#0a1c30" stroke="#1f6feb" stroke-width="0.6"/>
+<text x="62" y="152" font-size="13" fill="#cae8ff" dominant-baseline="central" font-family="sans-serif">site-packages（只有 Python 包）</text>
+<rect x="48" y="180" width="254" height="40" rx="8" fill="#0a1c30" stroke="#1f6feb" stroke-width="0.6"/>
+<text x="62" y="200" font-size="13" fill="#79b8ff" dominant-baseline="central" font-family="sans-serif">共享：同一个 python.exe</text>
+<rect x="48" y="228" width="254" height="40" rx="8" fill="#0a1c30" stroke="#1f6feb" stroke-width="0.6"/>
+<text x="62" y="248" font-size="13" fill="#79b8ff" dominant-baseline="central" font-family="sans-serif">共享：系统 C 库 / OpenSSL</text>
+<text x="175" y="302" font-size="12" fill="#79b8ff" text-anchor="middle" font-family="sans-serif">只隔离包 · 30–60 MB</text>
+
+<rect x="360" y="40" width="290" height="240" rx="14" fill="#0d2a1a" stroke="#238636" stroke-width="0.8"/>
+<text x="378" y="68" font-size="14" font-weight="600" fill="#c7f0d3" font-family="sans-serif">conda env</text>
+<rect x="378" y="84" width="254" height="40" rx="8" fill="#08190f" stroke="#238636" stroke-width="0.6"/>
+<text x="392" y="104" font-size="13" fill="#c7f0d3" dominant-baseline="central" font-family="sans-serif">独立的 python.exe</text>
+<rect x="378" y="132" width="254" height="40" rx="8" fill="#08190f" stroke="#238636" stroke-width="0.6"/>
+<text x="392" y="152" font-size="13" fill="#c7f0d3" dominant-baseline="central" font-family="sans-serif">独立的 site-packages</text>
+<rect x="378" y="180" width="254" height="40" rx="8" fill="#08190f" stroke="#238636" stroke-width="0.6"/>
+<text x="392" y="200" font-size="13" fill="#c7f0d3" dominant-baseline="central" font-family="sans-serif">独立的 Library\bin（DLL）</text>
+<rect x="378" y="228" width="254" height="40" rx="8" fill="#08190f" stroke="#238636" stroke-width="0.6"/>
+<text x="392" y="248" font-size="13" fill="#c7f0d3" dominant-baseline="central" font-family="sans-serif">独立的 MKL / OpenSSL / zlib</text>
+<text x="505" y="302" font-size="12" fill="#7ee787" text-anchor="middle" font-family="sans-serif">解释器 + 二进制全隔离 · 数百 MB 起</text>
+</svg>
+<div class="cap">venv 是「同一台发动机换个油箱」，conda 是「整车换一套」</div>
+</div>
+
+<table>
+<thead><tr><th>对比项</th><th>venv</th><th>conda env</th></tr></thead>
+<tbody>
+<tr><td>隔离范围</td><td>仅第三方 Python 包</td><td>包 + 解释器 + C 库 + 编译器运行时</td></tr>
+<tr><td>换 Python 版本</td><td>不行，必须重建</td><td>可以，一个参数搞定</td></tr>
+<tr><td>包来源</td><td>仅 PyPI</td><td>conda 仓库 + PyPI</td></tr>
+<tr><td>装 numpy</td><td>下载 PyPI wheel（内含 OpenBLAS）</td><td>装 MKL 编译版，矩阵运算更快</td></tr>
+<tr><td>装 GDAL / FFmpeg / CUDA 工具链</td><td>pip 常编译失败</td><td>一条命令预编译好</td></tr>
+<tr><td>依赖求解</td><td>pip 逐个装，不检查 ABI 兼容</td><td>libmamba 整体求解，保证整条链兼容</td></tr>
+<tr><td>创建速度</td><td>秒级</td><td>数十秒（要解依赖）</td></tr>
+<tr><td>典型体积</td><td>30–60 MB</td><td>数百 MB 到 5 GB</td></tr>
+<tr><td>切换机制</td><td><code>pyvenv.cfg</code> + <code>sys.prefix</code></td><td>改 PATH 前缀 + <code>CONDA_PREFIX</code></td></tr>
+</tbody>
+</table>
+
+<h3>一句话记忆</h3>
+<ul>
+<li><strong>venv</strong>：只把"第三方包"圈出来，Python 本体还是系统那一个。</li>
+<li><strong>conda</strong>：连 Python 本体、数学库、DLL 一起打包，是个完整可搬运的环境。</li>
+</ul>
+
+<h2 id="scope">两者的适用范围</h2>
+
+<table>
+<thead><tr><th>场景</th><th>推荐</th><th>原因</th></tr></thead>
+<tbody>
+<tr><td>纯 Python Web 后端（Flask / Django / FastAPI）</td><td><span class="badge b-blue">venv</span></td><td>依赖都是纯 Python，venv 够用且轻快</td></tr>
+<tr><td>小脚本、自动化工具、爬虫</td><td><span class="badge b-blue">venv</span></td><td>几十 MB 就能跑，没必要背几百 MB</td></tr>
+<tr><td>数据分析（pandas / matplotlib）</td><td><span class="badge b-green">conda</span></td><td>MKL 加速，且 numpy/scipy 版本一致性好</td></tr>
+<tr><td>深度学习 / 机器学习</td><td><span class="badge b-green">conda</span></td><td>要 CUDA、cuDNN、MKL 这些非 Python 组件</td></tr>
+<tr><td>地理信息（GDAL / Fiona / rasterio）</td><td><span class="badge b-green">conda</span></td><td>pip 装这些几乎必失败，需要预编译二进制</td></tr>
+<tr><td>科学计算 / 信号处理 / 生信</td><td><span class="badge b-green">conda</span></td><td>依赖大量 C/Fortran 库</td></tr>
+<tr><td>需要多个 Python 版本并存</td><td><span class="badge b-green">conda</span></td><td>venv 无法换解释器版本</td></tr>
+<tr><td>打包分发、离线部署</td><td><span class="badge b-green">conda</span></td><td><code>conda-pack</code> 可整包搬走</td></tr>
+</tbody>
+</table>
+
+<div class="note">
+<b>实践建议：</b>既然已经装了 Anaconda，就统一用 conda 管环境，不要一半 venv 一半 conda。混用最大的问题是"我到底装在哪个环境里"——这类问题排查起来非常耗时。
+</div>
+
+<h2 id="basics">conda 基本命令速查</h2>
+
+<h3>环境管理</h3>
+<table>
+<thead><tr><th>命令</th><th>作用</th></tr></thead>
+<tbody>
+<tr><td><code>conda env list</code></td><td>列出所有环境，<code>*</code> 标记当前激活的</td></tr>
+<tr><td><code>conda create -n 名字 python=3.12</code></td><td>创建新环境</td></tr>
+<tr><td><code>conda activate 名字</code></td><td>激活环境</td></tr>
+<tr><td><code>conda deactivate</code></td><td>退出当前环境</td></tr>
+<tr><td><code>conda env remove -n 名字</code></td><td>删除环境（连同目录一起删）</td></tr>
+<tr><td><code>conda create -n 新名 --clone 旧名</code></td><td>克隆环境</td></tr>
+<tr><td><code>conda rename -n 旧名 新名</code></td><td>重命名</td></tr>
+</tbody>
+</table>
+
+<h3>包管理（必须先激活目标环境）</h3>
+<table>
+<thead><tr><th>命令</th><th>作用</th></tr></thead>
+<tbody>
+<tr><td><code>conda list</code></td><td>列出当前环境所有包</td></tr>
+<tr><td><code>conda install 包名</code></td><td>安装</td></tr>
+<tr><td><code>conda install 包名=1.26</code></td><td>安装指定版本</td></tr>
+<tr><td><code>conda remove 包名</code></td><td>卸载</td></tr>
+<tr><td><code>conda update 包名</code></td><td>更新单个包</td></tr>
+<tr><td><code>conda update --all</code></td><td>更新全部（慎用，可能大改依赖树）</td></tr>
+<tr><td><code>conda search 包名</code></td><td>搜索可用版本</td></tr>
+<tr><td><code>conda clean --all</code></td><td>清理下载缓存（本机可回收约 6 GB）</td></tr>
+</tbody>
+</table>
+
+<h3>信息查询</h3>
+<table>
+<thead><tr><th>命令</th><th>作用</th></tr></thead>
+<tbody>
+<tr><td><code>conda info</code></td><td>当前配置、base 路径、环境目录</td></tr>
+<tr><td><code>conda --version</code></td><td>conda 自身版本</td></tr>
+<tr><td><code>conda config --show channels</code></td><td>查看包源</td></tr>
+<tr><td><code>where python</code></td><td>看当前 <code>python</code> 到底指向哪个</td></tr>
+<tr><td><code>python -c "import sys; print(sys.executable)"</code></td><td>最可靠的解释器路径确认</td></tr>
+</tbody>
+</table>
+
+<div class="warn">
+<b>Windows 特有：</b>PowerShell 里没有 <code>where</code> 的完整版，用 <code>Get-Command python</code>；cmd 里用 <code>where python</code>。Git Bash 里用 <code>which python</code>。
+</div>
+
+<h2 id="create">创建环境</h2>
+
+<p>标准写法，指定环境和 Python 版本：</p>
+
+<pre><code>conda create -n 项目名 python=3.12</code></pre>
+
+<p>一次性把常用科学栈装进去（推荐，省得后面一个个装）：</p>
+
+<pre><code>conda create -n 项目名 python=3.12 numpy pandas matplotlib scikit-learn jupyterlab</code></pre>
+
+<p>建完激活：</p>
+
+<pre><code>conda activate 项目名</code></pre>
+
+<h3>如果卡在 TOS 条款上</h3>
+
+<p>Anaconda 官方源（defaults）从 2024 年起要求先接受服务条款，否则会报：</p>
+
+<pre><code>CondaToSNonInteractiveError: Terms of Service have not been accepted for the following channels.
+    - https://repo.anaconda.com/pkgs/r
+    - https://repo.anaconda.com/pkgs/msys2</code></pre>
+
+<p>三种解法，任选：</p>
+
+<h4>方案 A：接受条款（个人使用免费）</h4>
+<pre><code>conda tos accept --override-channels --channel https://repo.anaconda.com/pkgs/r
+conda tos accept --override-channels --channel https://repo.anaconda.com/pkgs/msys2</code></pre>
+
+<h4>方案 B：改用 conda-forge（不涉及 Anaconda 条款）</h4>
+<pre><code>conda create -n 项目名 python=3.12 -c conda-forge --override-channels</code></pre>
+
+<h4>方案 C：配置清华镜像</h4>
+<pre><code>conda config --add channels https://mirrors.tuna.tsinghua.edu.cn/anaconda/pkgs/main/
+conda config --add channels https://mirrors.tuna.tsinghua.edu.cn/anaconda/pkgs/free/
+conda config --set show_channel_urls yes</code></pre>
+
+<div class="note">
+本机的 <code>dl</code> 环境就是用方案 B 建的——既绕开了条款，下载也更快。
+</div>
+
+<h3>环境导出与迁移</h3>
+
+<pre><code># 导出（含精确版本，跨平台会带 build 号，换机器可能装不上）
+conda env export &gt; environment.yml
+
+# 跨平台友好：只导出显式安装的包
+conda env export --from-history &gt; environment.yml
+
+# 在另一台机器重建
+conda env create -f environment.yml</code></pre>
+
+<h2 id="lifecycle">一个项目一个环境吗</h2>
+
+<p><strong>不是。</strong>正确的划分依据是<strong>「依赖组合」</strong>，而不是项目数量。「一个项目一个环境」是理想化的说法，照做的话半年能攒出二三十个环境，大部分磁盘和精力都耗在管理环境上，而不是写代码。</p>
+
+<div class="note">
+<b>一句话原则：</b>当两个项目的依赖能共存时，共用一个环境；当它们互相排斥时，才分家。
+</div>
+
+<h3>什么时候必须新建</h3>
+
+<table>
+<thead><tr><th>信号</th><th>说明</th></tr></thead>
+<tbody>
+<tr><td>Python 版本要求不同</td><td>老项目锁 3.10，新项目要 3.12。venv 做不到，conda 可以</td></tr>
+<tr><td>核心库大版本冲突</td><td>一个要 <code>torch 1.13</code>，一个要 <code>2.11</code>；或 <code>numpy 1.x</code> 与 <code>2.x</code></td></tr>
+<tr><td>需要精确复现</td><td>论文复现、要交付给别人、要写清楚安装文档</td></tr>
+<tr><td>会大量试错装包</td><td>学新库时容易装乱，隔离起来不怕污染主力环境</td></tr>
+<tr><td>两个项目要长期并行</td><td>来回切换是常态，混在一起必然互相踩</td></tr>
+</tbody>
+</table>
+
+<h3>什么时候不必新建</h3>
+
+<table>
+<thead><tr><th>情况</th><th>做法</th></tr></thead>
+<tbody>
+<tr><td>临时脚本、算个数、验证个想法</td><td>直接用 <code>base</code> 或 <code>dl</code></td></tr>
+<tr><td>依赖当前环境都满足</td><td>直接用 <code>dl</code>，别折腾</td></tr>
+<tr><td>同一技术栈的多个小练习</td><td>共用 <code>dl</code>，MNIST、CIFAR、简单 CNN 都放一起</td></tr>
+<tr><td>学习阶段还没有固定项目</td><td>就用 <code>dl</code>，等真需要分的时候再分</td></tr>
+</tbody>
+</table>
+
+<h3>三个阶段的真实布局</h3>
+
+<table>
+<thead><tr><th>阶段</th><th>环境构成</th><th>数量</th></tr></thead>
+<tbody>
+<tr><td>学习期 <span class="badge b-green">当前</span></td><td><code>base</code>（工具箱）+ <code>dl</code>（主力）</td><td>2 个</td></tr>
+<tr><td>做项目期</td><td><code>base</code> + <code>dl</code>（实验田）+ 每个正式项目一个</td><td>4–6 个</td></tr>
+<tr><td>交付期</td><td>再加一个「干净环境」，用来验证安装文档是否写得对</td><td>6–8 个</td></tr>
+</tbody>
+</table>
+
+<div class="warn">
+<b>超过 10 个就该合并了。</b>环境数量本身不是资产，能说清楚每个环境为什么存在才是。如果某个环境你已经三个月没激活过，那它大概率可以删。
+</div>
+
+<h3>命名与体积</h3>
+
+<p>名字要能一眼认出用途，别用 <code>test</code>、<code>env1</code>、<code>new</code>、<code>myenv</code>——半年后完全想不起来里面是什么。</p>
+
+<pre><code># 推荐：项目名，或 技术栈-项目名
+conda create -n mnist-demo python=3.12
+conda create -n nlp-bert python=3.12
+conda create -n py311-legacy python=3.11</code></pre>
+
+<p>查每个环境占多大（PowerShell）：</p>
+
+<pre><code>Get-ChildItem "$env:USERPROFILE\anaconda3\envs" -Directory | ForEach-Object {
+    $size = (Get-ChildItem $_.FullName -Recurse -File -ErrorAction SilentlyContinue |
+             Measure-Object -Property Length -Sum).Sum
+    "{0,-22} {1,8:N2} GB" -f $_.Name, ($size / 1GB)
+}</code></pre>
+
+<h3>删除不需要的环境</h3>
+
+<p>标准流程，按顺序走，别跳步：</p>
+
+<h4>第 1 步：确认有哪些、谁在用</h4>
+
+<pre><code>conda env list
+where python        # 看当前终端指向哪个环境</code></pre>
+
+<p>同时确认 VSCode 右下角显示的解释器不是要删的那个。</p>
+
+<h4>第 2 步：需要保留配置就先导出</h4>
+
+<pre><code>conda env export -n 环境名 &gt; D:\backup\环境名.yml</code></pre>
+
+<p>以后想恢复：<code>conda env create -f D:\backup\环境名.yml</code>。只是删着玩、确定不要了，这步可以跳过。</p>
+
+<h4>第 3 步：删除</h4>
+
+<pre><code>conda env remove -n 环境名</code></pre>
+
+<div class="danger">
+<b>删除是不可逆的。</b>环境目录会被整个删掉，里面所有的包、以及你放在环境目录里的任何文件都会一起消失。删之前务必确认项目代码不在 <code>anaconda3\envs\环境名\</code> 里——正常情况代码应该放在 <code>D:\code\</code> 下，那种情况不受影响。
+</div>
+
+<h4>第 4 步：清理缓存</h4>
+
+<pre><code>conda clean --all</code></pre>
+
+<p>删环境只释放了环境目录本身，安装包缓存还在。本机 <code>pkgs</code> 缓存目前约 6 GB，这一步能一并清掉（之后重装包需要重新下载）。</p>
+
+<h4>第 5 步：清理残留</h4>
+
+<pre><code># 检查 Jupyter 里是否还有这个环境的内核
+jupyter kernelspec list
+jupyter kernelspec remove 环境名
+
+# 检查目录是否真的删干净（删除中途失败会留下空壳）
+dir C:\Users\18960\anaconda3\envs</code></pre>
+
+<p>如果目录还在，直接删：</p>
+
+<pre><code>Remove-Item "C:\Users\18960\anaconda3\envs\环境名" -Recurse -Force</code></pre>
+
+<h3>删除失败的两个常见原因</h3>
+
+<table>
+<thead><tr><th>现象</th><th>原因与处理</th></tr></thead>
+<tbody>
+<tr><td>提示 <code>EnvironmentLocationNotFound</code></td><td>名字写错了。先用 <code>conda env list</code> 看准确名字</td></tr>
+<tr><td>删除卡住或报文件占用</td><td>该环境正被终端占用。先 <code>conda deactivate</code>，关掉所有指向它的终端，必要时重启 VSCode 再删</td></tr>
+</tbody>
+</table>
+
+<div class="ok">
+<b>放心删：</b>删除普通环境<strong>不会</strong>影响 <code>base</code>，也<strong>不会</strong>影响 <code>conda</code> 命令本身。只有删 <code>base</code> 才会把 conda 一起弄坏——所以 base 永远不要删。
+</div>
+
+<h2 id="pyswitch">更换 Python 版本</h2>
+
+<p>这是 conda 相比 venv 最大的优势，但有个陷阱要说清楚。</p>
+
+<h3>方式一：新建环境（推荐）</h3>
+
+<pre><code>conda create -n 项目名311 python=3.11
+conda activate 项目名311</code></pre>
+
+<p>干净、可控、不会牵连已有环境。缺点是包要重装（可以从旧环境克隆再改版本）：</p>
+
+<pre><code># 先克隆
+conda create -n 项目名311 --clone 项目名
+# 再在克隆体上换版本
+conda activate 项目名311
+conda install python=3.11</code></pre>
+
+<h3>方式二：原地改版本</h3>
+
+<pre><code>conda activate 项目名
+conda install python=3.11</code></pre>
+
+<div class="warn">
+<b>原地换版本的风险：</b>conda 会重新求解整个依赖树，把需要重编译的包换成对应 Python 版本的构建。<strong>但用 pip 装过的包 conda 不认识</strong>，它们不会跟着重装，通常会直接失效（报 <code>DLL load failed</code> 或 <code>ModuleNotFoundError</code>）。如果环境里 pip 包很多，宁愿新建。
+</div>
+
+<h3>能不能降到任意版本？</h3>
+
+<p>可以，但受两个限制：</p>
+<ul>
+<li>conda 仓库里得存在该版本的构建（太老的版本可能只有 conda-forge 有）；</li>
+<li>你的操作系统要支持（Windows 上 Python 3.8 以下已很难装）。</li>
+</ul>
+
+<pre><code># 先看有哪些版本可选
+conda search python
+
+# 指定小版本
+conda install python=3.11.9</code></pre>
+
+<h2 id="install">安装各种库</h2>
+
+<h3>conda 还是 pip？</h3>
+
+<table>
+<thead><tr><th>情况</th><th>用哪个</th><th>说明</th></tr></thead>
+<tbody>
+<tr><td>科学计算栈（numpy / scipy / pandas / scikit-learn）</td><td><code>conda</code></td><td>能拿到 MKL 加速版，二进制一致性好</td></tr>
+<tr><td>含 C 扩展的地理/图像/AI 库</td><td><code>conda</code></td><td>GDAL、OpenCV、PyTorch 等有预编译包</td></tr>
+<tr><td>纯 Python 库（requests / flask / rich）</td><td><code>pip</code></td><td>conda 仓库更新慢，pip 更快拿到新版</td></tr>
+<tr><td>只在 PyPI 上有的包</td><td><code>pip</code></td><td>没得选</td></tr>
+<tr><td>公司内部包 / 本地开发包</td><td><code>pip</code></td><td><code>pip install -e .</code></td></tr>
+</tbody>
+</table>
+
+<div class="danger">
+<b>最重要的一条规矩：</b>一个环境里<strong>不要 conda 和 pip 反复交叉装同一个包</strong>。先 conda 装科学栈，剩下用 pip 补，装完就固定下来。频繁交叉会让两边的依赖记录互相打架，最后只能重建环境。
+</div>
+
+<h3>pip 常用命令</h3>
+
+<pre><code>pip install 包名
+pip install 包名==1.2.3
+pip install -r requirements.txt
+pip install --upgrade 包名
+pip uninstall 包名
+pip list
+pip list --outdated
+pip freeze &gt; requirements.txt
+pip show 包名</code></pre>
+
+<h3>装 PyTorch（GPU 版）</h3>
+
+<p>第一步永远是看驱动支持到哪个 CUDA 版本：</p>
+
+<pre><code>nvidia-smi</code></pre>
+
+<p>输出右上角的 <code>CUDA Version: 12.8</code> 就是驱动上限。<strong>装的 PyTorch CUDA 版本不能高于它</strong>。然后按版本选索引地址：</p>
+
+<pre><code># CUDA 12.8（本机用的这个）
+pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu128
+
+# CUDA 12.6
+pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu126
+
+# 纯 CPU 版（没有 N 卡，或只想跑小模型）
+pip install torch torchvision torchaudio</code></pre>
+
+<div class="note">
+PyTorch 的 CUDA 版 wheel 有 2.5–3 GB，且<strong>只能从官方源下载</strong>，清华镜像没有对应的 CUDA wheel。国内下载可能要几分钟到十几分钟，属正常。
+</div>
+
+<p>装完必须验证：</p>
+
+<pre><code>python -c "import torch; print(torch.__version__, torch.cuda.is_available())"</code></pre>
+
+<p>输出 <code>2.11.0+cu128 True</code> 才算成功。只有 <code>True</code> 才代表 GPU 可用。</p>
+
+<h2 id="mirror">国内镜像加速</h2>
+
+<h3>pip 换清华源</h3>
+
+<pre><code># 全局配置
+pip config set global.index-url https://pypi.tuna.tsinghua.edu.cn/simple
+
+# 或者单次使用
+pip install 包名 -i https://pypi.tuna.tsinghua.edu.cn/simple</code></pre>
+
+<h3>conda 换源</h3>
+
+<pre><code>conda config --add channels https://mirrors.tuna.tsinghua.edu.cn/anaconda/pkgs/main/
+conda config --add channels https://mirrors.tuna.tsinghua.edu.cn/anaconda/pkgs/free/
+conda config --add channels https://mirrors.tuna.tsinghua.edu.cn/anaconda/cloud/conda-forge/
+conda config --set show_channel_urls yes</code></pre>
+
+<h3>代理</h3>
+
+<p>如果本机开了代理软件（本机系统代理是 <code>127.0.0.1:7897</code>），pip 和 conda 默认会读系统代理。也可以在命令行里临时指定：</p>
+
+<pre><code>set HTTPS_PROXY=http://127.0.0.1:7897
+set HTTP_PROXY=http://127.0.0.1:7897</code></pre>
+
+<div class="warn">
+<b>注意：</b>环境变量里的代理优先级<strong>高于</strong>系统代理。如果某天 pip 突然连不上，先检查 <code>echo %HTTPS_PROXY%</code> 是不是残留了一个失效的地址。
+</div>
+
+<h2 id="vscode">在 VSCode 中使用</h2>
+
+<h3>选解释器（三选一）</h3>
+
+<ol>
+<li><code>Ctrl+Shift+P</code> → 输入 <strong>Python: Select Interpreter</strong> → 从列表里选带 <code>('dl': conda)</code> 的那一项。</li>
+<li>点右下角状态栏的 Python 版本号，会弹出同样的列表。</li>
+<li><code>Ctrl+Shift+P</code> → <strong>Python: Select Workspace Interpreter</strong>，只对当前工作区生效。</li>
+</ol>
+
+<p>选完之后，右下角会显示 <code>Python 3.12.16 ('dl': conda)</code>，新开的终端顶部会自动出现激活提示：</p>
+
+<pre><code>(dl) PS D:\code\deeplearning&gt;</code></pre>
+
+<p>看到 <code>(dl)</code> 就说明激活成功了。此时 <code>python</code> 指向 <code>anaconda3\envs\dl\python.exe</code>。</p>
+
+<h3>VSCode 怎么知道有哪些环境</h3>
+
+<p>Python 扩展会自动扫描这几个位置：</p>
+<ul>
+<li><code>C:\Users\18960\anaconda3</code>（base）</li>
+<li><code>C:\Users\18960\anaconda3\envs\*</code>（所有 conda 环境）</li>
+<li><code>.venv</code>、<code>venv</code>（项目目录里的 venv）</li>
+<li>系统 PATH 里的所有 Python</li>
+</ul>
+
+<p>新建了环境但列表里没出现，执行 <code>Ctrl+Shift+P</code> → <strong>Developer: Reload Window</strong> 刷新一下即可。</p>
+
+<h3>终端没自动激活怎么办</h3>
+
+<p>检查这两点：</p>
+<ol>
+<li>设置里 <code>python.terminal.activateEnvironment</code> 是 <code>true</code>；</li>
+<li>设置里 <code>python.condaPath</code> 指向了正确的 <code>conda.exe</code>。</li>
+</ol>
+
+<h2 id="settings">推荐的 settings.json</h2>
+
+<p>打开方式：<code>Ctrl+Shift+P</code> → <strong>Preferences: Open User Settings (JSON)</strong>。</p>
+
+<pre><code>{
+    "python.condaPath": "C:\\Users\\18960\\anaconda3\\Scripts\\conda.exe",
+    "python.terminal.activateEnvironment": true,
+    "python.defaultInterpreterPath": "C:\\Users\\18960\\anaconda3\\envs\\dl\\python.exe",
+    "editor.formatOnSave": true,
+    "files.autoSave": "afterDelay"
+}</code></pre>
+
+<table>
+<thead><tr><th>配置项</th><th>作用</th></tr></thead>
+<tbody>
+<tr><td><code>python.condaPath</code></td><td>告诉扩展 conda 在哪。conda 没进 PATH 时必须配</td></tr>
+<tr><td><code>python.terminal.activateEnvironment</code></td><td>新开终端自动激活选中的环境</td></tr>
+<tr><td><code>python.defaultInterpreterPath</code></td><td>没有手动选择时的默认解释器</td></tr>
+</tbody>
+</table>
+
+<div class="note">
+注意 JSON 里 Windows 路径的<strong>反斜杠要写两个</strong>（<code>\\</code>），否则会被当成转义符。
+</div>
+
+<h2 id="notebook">Jupyter 内核</h2>
+
+<p>想用 <code>.ipynb</code> 写代码，需要把环境注册成 Jupyter 内核：</p>
+
+<pre><code>conda activate dl
+python -m ipykernel install --user --name dl --display-name "Python 3.12 (dl)"</code></pre>
+
+<p>然后在 notebook 右上角点 kernel 选择器，选 <code>Python 3.12 (dl)</code>。</p>
+
+<p>查看已注册的内核：</p>
+
+<pre><code>jupyter kernelspec list</code></pre>
+
+<p>删除不需要的：</p>
+
+<pre><code>jupyter kernelspec remove dl</code></pre>
+
+<h2 id="trouble">常见报错处理</h2>
+
+<div class="q">
+<div class="head">1. conda : 无法将"conda"项识别为 cmdlet、函数、脚本文件或可运行程序的名称</div>
+<div class="body">
+<p><strong>原因：</strong>PowerShell 的执行策略是 <code>Restricted</code>，导致 <code>Documents\WindowsPowerShell\Microsoft.PowerShell_profile.ps1</code> 里的 conda 初始化块根本没被执行。而 conda 又没加入 PATH，所以命令不存在。</p>
+<p><strong>诊断：</strong></p>
+<pre><code>Get-ExecutionPolicy          # 输出 Restricted 就是这个问题
+Get-Content $PROFILE         # 看里面有没有 conda initialize 块</code></pre>
+<p><strong>修复：</strong></p>
+<pre><code>Set-ExecutionPolicy -Scope CurrentUser -ExecutionPolicy RemoteSigned -Force</code></pre>
+<p>然后<strong>完全退出 VSCode 再重开</strong>（旧终端进程还带着旧策略），验证：</p>
+<pre><code>conda --version
+conda activate base
+python -V</code></pre>
+<p><strong>为什么是 RemoteSigned：</strong>本地生成的文件可以直接运行，从网上下载的脚本必须有签名。这是微软推荐的桌面默认值，安全性和便利性平衡最好。</p>
+</div>
+</div>
+
+<div class="q">
+<div class="head">2. CondaToSNonInteractiveError：Terms of Service 未接受</div>
+<div class="body">
+<p><strong>原因：</strong>Anaconda 官方源要求先接受条款。</p>
+<p><strong>处理：</strong>用 <code>conda tos accept</code> 接受，或者改用 <code>-c conda-forge --override-channels</code>，或者配置清华镜像。详见<a href="#create">创建环境</a>一节。</p>
+</div>
+</div>
+
+<div class="q">
+<div class="head">3. pip 报 [WinError 5] 拒绝访问（...RECORD）</div>
+<div class="body">
+<p><strong>原因：</strong>Windows Defender 的实时保护正在扫描刚解压的文件，pip 想把临时文件改名时被占用。</p>
+<p><strong>处理：</strong><strong>直接重跑同一条命令</strong>。包文件其实已经解压完整，重试只是补写元数据，通常一次就过。</p>
+<p>如果反复失败，加个排除目录（需要管理员权限的 PowerShell）：</p>
+<pre><code>Add-MpPreference -ExclusionPath "C:\Users\18960\anaconda3\envs"</code></pre>
+</div>
+</div>
+
+<div class="q">
+<div class="head">4. 从 Anaconda Navigator 启动 VSCode，GitHub 和插件都要重新登录</div>
+<div class="body">
+<p><strong>原因：</strong>Navigator 启动 VSCode 时，会把 conda 环境的 <code>PATH</code>、<code>Library\bin</code> 一起注入子进程。结果 VSCode 的 Git 扩展调 <code>git.exe</code> 时加载到了 conda 自带的 <code>libcurl</code> / <code>libssl</code>，HTTPS 和凭据助手容易崩，表现为反复要求登录。</p>
+<p><strong>结论：不要用 Navigator 启动 VSCode。</strong>VSCode 不需要 conda 环境，用开始菜单、任务栏或 <code>code .</code> 启动即可，环境交给 Python 扩展管理。</p>
+</div>
+</div>
+
+<div class="q">
+<div class="head">5. torch.cuda.is_available() 返回 False</div>
+<div class="body">
+<p>按顺序排查：</p>
+<ol>
+<li><code>nvidia-smi</code> 能不能跑通？跑不通说明驱动有问题，先更新显卡驱动。</li>
+<li><code>pip show torch</code> 看版本号，有 <code>+cu128</code> 后缀才是 GPU 版；没有就是装成了 CPU 版。</li>
+<li>驱动版本太低？<code>nvidia-smi</code> 右上角的 CUDA Version 必须 ≥ 装的版本。</li>
+<li>重装 GPU 版：<code>pip install --force-reinstall torch torchvision --index-url https://download.pytorch.org/whl/cu128</code></li>
+</ol>
+</div>
+</div>
+
+<div class="q">
+<div class="head">6. 装完包但 import 报 ModuleNotFoundError</div>
+<div class="body">
+<p>九成是装到了别的环境。确认当前解释器：</p>
+<pre><code>python -c "import sys; print(sys.executable)"</code></pre>
+<p>输出的路径必须是你要用的那个环境的 <code>python.exe</code>。如果不是，说明终端没激活，先 <code>conda activate 环境名</code>。</p>
+</div>
+</div>
+
+<div class="q">
+<div class="head">7. 环境提示 inconsistent / 依赖冲突</div>
+<div class="body">
+<p>通常是 conda 和 pip 交叉安装造成的。先看哪些包状态异常：</p>
+<pre><code>conda list</code></pre>
+<p>修复尝试：</p>
+<pre><code>conda install --revision 0</code></pre>
+<p>不行就导出 pip 的包清单，重建环境：</p>
+<pre><code>pip freeze &gt; req.txt
+conda create -n 新环境 python=3.12
+conda activate 新环境
+pip install -r req.txt</code></pre>
+</div>
+</div>
+
+<h2 id="appendix">本机环境档案</h2>
+
+<h3>2026-11-02 实测快照</h3>
+
+<table>
+<thead><tr><th>项目</th><th>值</th></tr></thead>
+<tbody>
+<tr><td>CPU</td><td>i5-12400F</td></tr>
+<tr><td>内存</td><td>31.8 GB</td></tr>
+<tr><td>显卡</td><td>NVIDIA GeForce RTX 3060 Ti，8 GB 显存，算力 sm_86</td></tr>
+<tr><td>驱动</td><td>617.42（支持到 CUDA 13.x）</td></tr>
+<tr><td>conda</td><td>26.5.3</td></tr>
+<tr><td>base 环境</td><td>Python 3.14.6，536 个包，10.8 GB</td></tr>
+<tr><td>dl 环境</td><td>Python 3.12.16，118 个包，4.93 GB</td></tr>
+<tr><td>PyTorch</td><td>2.11.0+cu128 / torchvision 0.26.0+cu128 / torchaudio 2.11.0+cu128</td></tr>
+<tr><td>CUDA / cuDNN</td><td>12.8 / 9.19</td></tr>
+<tr><td>验证结果</td><td>GPU 训练通过，loss 0.66 → 0.42，准确率 0.91</td></tr>
+</tbody>
+</table>
+
+<h3>常用路径</h3>
+
+<pre><code>Anaconda 根目录      C:\Users\18960\anaconda3
+conda 可执行文件      C:\Users\18960\anaconda3\Scripts\conda.exe
+base 解释器           C:\Users\18960\anaconda3\python.exe
+dl 环境解释器         C:\Users\18960\anaconda3\envs\dl\python.exe
+dl 环境 site-packages C:\Users\18960\anaconda3\envs\dl\Lib\site-packages
+PowerShell 配置文件   C:\Users\18960\Documents\WindowsPowerShell\Microsoft.PowerShell_profile.ps1
+VSCode 用户设置       C:\Users\18960\AppData\Roaming\Code\User\settings.json</code></pre>
+
+<h3>一键自检命令</h3>
+
+<p>随时想知道环境是否正常，跑这三行：</p>
+
+<pre><code>conda env list
+conda activate dl
+python -c "import torch, sys; print(sys.executable); print(torch.__version__, torch.cuda.is_available())"</code></pre>
+
+<p>工作区里的 <code>check_dl_env.py</code> 是更完整的版本，会打印版本、GPU 信息并跑一次真实训练：</p>
+
+<pre><code>C:\Users\18960\anaconda3\envs\dl\python.exe check_dl_env.py</code></pre>
+
+<hr>
+
+<h3>几条长期有效的习惯</h3>
+
+<ul>
+<li><strong>一个项目一个环境</strong>，环境名跟项目名一致。别复用一个环境跑三个项目。</li>
+<li><strong>base 只当工具箱</strong>，不要在 base 里装项目依赖——base 坏了 conda 命令本身就不能用了。</li>
+<li><strong>装完立刻记下来</strong>：<code>pip freeze &gt; requirements.txt</code>，或 <code>conda env export &gt; environment.yml</code>。</li>
+<li><strong>遇到诡异问题先问解释器是谁</strong>：<code>print(sys.executable)</code> 能解决一半的环境问题。</li>
+<li><strong>别用 Navigator 启动 VSCode</strong>，两个工具各管各的。</li>
+</ul>
+
+</main>
+
+<div class="top" id="toTop" title="回到顶部">↑</div>
+
+<script>
+document.querySelectorAll('pre').forEach(function (pre) {
+  var btn = document.createElement('button');
+  btn.className = 'copy';
+  btn.textContent = '复制';
+  btn.addEventListener('click', function () {
+    var code = pre.querySelector('code');
+    var text = code ? code.innerText : pre.innerText;
+    navigator.clipboard.writeText(text).then(function () {
+      btn.textContent = '已复制';
+      setTimeout(function () { btn.textContent = '复制'; }, 1200);
+    }).catch(function () {
+      btn.textContent = '复制失败';
+      setTimeout(function () { btn.textContent = '复制'; }, 1500);
+    });
+  });
+  pre.appendChild(btn);
+});
+
+var links = Array.prototype.slice.call(document.querySelectorAll('.nav a'));
+var sections = links.map(function (a) {
+  return document.querySelector(a.getAttribute('href'));
+}).filter(Boolean);
+
+if ('IntersectionObserver' in window) {
+  var observer = new IntersectionObserver(function (entries) {
+    entries.forEach(function (entry) {
+      if (entry.isIntersecting) {
+        links.forEach(function (l) {
+          l.classList.toggle('active', l.getAttribute('href') === '#' + entry.target.id);
+        });
+      }
+    });
+  }, { rootMargin: '-10% 0px -75% 0px' });
+  sections.forEach(function (s) { observer.observe(s); });
+}
+
+var topBtn = document.getElementById('toTop');
+window.addEventListener('scroll', function () {
+  topBtn.classList.toggle('show', window.scrollY > 600);
+});
+topBtn.addEventListener('click', function () {
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+});
+
+document.querySelectorAll('.nav a').forEach(function (a) {
+  a.addEventListener('click', function () {
+    if (window.innerWidth <= 900) {
+      window.scrollBy({ top: -70, behavior: 'auto' });
+    }
+  });
+});
+</script>
+
+</body>
+</html>
